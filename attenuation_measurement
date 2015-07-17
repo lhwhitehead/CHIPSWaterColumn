@@ -28,7 +28,7 @@ while (( $trig3 == 1 )); do
 	  total=0
 	  
 	  #finds the voltage from the photodiode and reads 25 times
-	  for i in {0 .. 24}; do
+	  for i in {0..24}; do
 	  	  adc=`cat "$SYSFS_ADC_DIR"`
 		  volts[$i]=$adc
 		  total=$(( $total + $adc ))
@@ -41,7 +41,7 @@ while (( $trig3 == 1 )); do
 	  #finds the error on the mean for the voltage
 	  rmsSum=0
 	  k=0
-	  for k in {0 .. 24}; do
+	  for k in {0..24}; do
 		  rmsSum=$(( $rmsSum + `./foil ${volts[$k]} averages`))
 	  done
 	  rms=`./find_error $rmsSum $toAverage`
