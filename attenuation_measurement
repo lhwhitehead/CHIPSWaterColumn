@@ -1,13 +1,11 @@
 #! /bin/bash
 
 #find the photodiode directory with help_num as an input argument
-help_num=$helper_num
+help_num=$1
 SYSFS_ADC_DIR="/sys/devices/ocp.3/helper."$help_num"/AIN0"
 
 #find and touch the file_name that it will output to it
-file1=$file_name
-echo $file1
-echo $file_name
+file1=$2
 touch $file1
 
 #set up averaging variables
@@ -19,12 +17,20 @@ count=0
 #set trigger level to loop over
 Trigger3="/sys/class/gpio/gpio46"
 trig3=`cat "$Trigger3/value"`
-
+buf1=2
+buf2=3
+buf3=4
 #always loops while trigger3 is activated
 while (( $trig3 == 1 )); do
 	
 	  #gets the value of trigger3 from the directory
-	  trig3=`cat "$Trigger3/value"`
+	  buf1=`cat "$Trigger3/value"`
+	  if [ $buf1 == $buf2 ] && [ $buf2 == $buf3 ]; then
+		trig3=$buf1
+	  else
+		buf3=$buf2
+		buf2=$buf1
+	  fi
 	  total=0
 	  
 	  #finds the voltage from the photodiode and reads 25 times
@@ -42,13 +48,15 @@ while (( $trig3 == 1 )); do
 	  rmsSum=0
 	  k=0
 	  for k in {0..24}; do
-		  rmsSum=$(( $rmsSum + `./foil ${volts[$k]} averages`))
+		  foilvar=`./foil ${volts[$k]} averages`
+		  rmsSum=`./add $rmsSum $foilvar`
 	  done
 	  rms=`./find_error $rmsSum $toAverage`
 	  
 	  #reads the values out to the file_name
-	  echo $count" "$averages" "$rms >> $file_name
+	  echo `date +%s.%3N`" "$averages" "$rms >> $file1
+	  echo `date +%s.%3N`" "$averages" "$rms
 
 	  #increments the time count
-	  count=$(( $count + 0.5 ))
+	  count=`./add $count 0.5`
 done
