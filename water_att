@@ -11,7 +11,7 @@ fill_relay="/sys/class/gpio/gpio68"
 drain_relay="/sys/class/gpio/gpio67"
 
 #set the pins to read voltage
-if [ `grep "cape-bone-iio" /sys/devices/bone_capemgr.*/slots | wc -l` -eq "1"]; then
+if [ `grep "cape-bone-iio" /sys/devices/bone_capemgr.*/slots | wc -l` -eq "1" ]; then
 	echo 
 else 
 	echo cape-bone-iio > /sys/devices/bone_capemgr.*/slots
@@ -100,7 +100,6 @@ fi
 
 #turn off fill pump when full
 isfull="0"
-counter=0
 while [ $isfull -eq "0" ]; do
 	isfull=`cat "$Trig1/value"`
 	sleep 0.01
@@ -123,9 +122,17 @@ echo 1 > "$drain_relay/value"
 
 #run attenuation measurement when trig_2 is deactive
 isempty="1"
-counter=0
+buffer1=2
+buffer2=3
+buffer3=4
 while [ "$isempty" -eq "1" ]; do
-        isempty=`cat "$Trig2/value"`
+        buffer1=`cat "$Trig2/value"`
+	if [ $buffer1 == $buffer2 ] && [ $buffer2 == $buffer3 ]; then
+		isempty=$buffer1
+	else
+		buffer3=$buffer2
+		buffer2=$buffer1
+	fi
         sleep 0.01
 done
 
@@ -137,9 +144,17 @@ file_name="attnRun_"`date "+%Y_%m_%d_%H_%M"`".txt"
 
 #stop drain pump when trig_4 is deactive
 fourisempty="1"
-counter=0
+buffer1=2
+buffer2=3
+buffer3=4
 while [ "$fourisempty" -eq "1" ]; do
-        fourisempty=`cat "$Trig4/value"`
+        buffer1=`cat "$Trig4/value"`
+	if [ $buffer1 == $buffer2 ] && [ $buffer2 == $buffer3 ]; then
+		fourisempty=$buffer1
+	else
+		buffer3=$buffer2
+		buffer2=$buffer1
+	fi
         sleep 0.01
 done
 
