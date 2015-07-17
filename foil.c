@@ -7,6 +7,6 @@ int main(int argc, char** argv) {
   float second;
   first=atof(argv[1]);
   second=atof(argv[2]);
-  printf("%f",(first*first) - (2 * first * second) + (second*second));
+  printf("%3f",((first*first) - (2 * first * second) + (second*second)));
 
 }
