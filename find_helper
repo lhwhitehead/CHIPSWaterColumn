@@ -1,0 +1,15 @@
+#! /bin/bash
+
+fileName=`find /sys/devices/ocp.3/ -iname "helper.*"`
+
+# Copy IFS so we can restore it later.
+dummyIFS=$IFS
+IFS="."
+
+tokens=( $fileName )
+
+# Reset the IFS variable.
+IFS=$dummyIFS
+
+number=${tokens[2]}
+echo $number

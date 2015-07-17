@@ -1,0 +1,30 @@
+#! /usr/bin/python
+
+import Adafruit_BBIO.GPIO as GPIO
+import time
+import sys
+
+pin=""
+mode=""
+duration=""
+
+# Check the command line arguments
+if len(sys.argv) != 4:
+    print "Usage: ./relay.py <pin> <0/1> <time(s)>"
+else:
+    pin = sys.argv[1]
+    mode = sys.argv[2]
+    duration = sys.argv[3]
+
+# Set up the pin and set the state
+GPIO.setup(pin, GPIO.OUT)
+if mode == "1":
+    GPIO.output(pin, GPIO.HIGH)
+else:
+    GPIO.output(pin, GPIO.LOW);
+
+time.sleep(int(duration))
+
+GPIO.cleanup()
+
+

@@ -1,0 +1,48 @@
+#! /bin/bash
+
+Trig1="/sys/class/gpio/gpio44"
+Trig2="/sys/class/gpio/gpio26"
+Trig3="/sys/class/gpio/gpio46"
+Trig4="/sys/class/gpio/gpio65"
+
+
+if [ -f $Trig1/direction ]; then
+        echo 
+else
+        echo 44 > "/sys/class/gpio/export"
+        echo in > direction
+fi
+
+if [ -f $Trig2/direction ]; then
+    echo
+else
+        echo 26 > "/sys/class/gpio/export"
+        echo in > direction
+fi
+
+if [ -f $Trig3/direction ]; then
+    echo
+else 
+        echo 46 > "/sys/class/gpio/export"
+        echo in > direction
+fi
+
+if [ -f $Trig4/direction ]; then
+    echo
+else
+        echo 65 > "/sys/class/gpio/export"
+        echo in >  direction
+fi
+
+
+
+while (( 1 == 1 )); do
+	trigger1=`cat "$Trig1/value"`
+	trigger2=`cat "$Trig2/value"`
+	trigger3=`cat "$Trig3/value"`
+	trigger4=`cat "$Trig4/value"`
+
+	#echo out the trigger values
+	echo "$trigger1" "$trigger2" "$trigger3" "$trigger4"
+
+done

@@ -1,0 +1,31 @@
+#! /usr/bin/python
+
+import Adafruit_BBIO.PWM as PWM
+import sys
+import time
+
+pin = ""
+io = 0
+
+if len(sys.argv) != 3:
+    sys.exit("Usage: ./servo <pin> <0/1>")
+else:
+    pin = sys.argv[1]
+    io = float(sys.argv[2])
+    
+
+duty_min = 8.7
+duty_max = 6.1
+duty = 0
+
+if io == 0:
+    duty = duty_min
+else:
+    duty = duty_max
+
+PWM.start(pin,duty,60.0)
+PWM.set_duty_cycle(pin,duty)
+time.sleep(2)
+PWM.stop(pin)
+PWM.cleanup()
+
