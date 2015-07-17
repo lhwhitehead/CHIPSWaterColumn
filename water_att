@@ -11,56 +11,68 @@ fill_relay="/sys/class/gpio/gpio68"
 drain_relay="/sys/class/gpio/gpio67"
 
 #set the pins to read voltage
-if [ -f /sys/devices/bone_capemgr.*/slots ]; then
+if [ `grep "cape-bone-iio" /sys/devices/bone_capemgr.*/slots | wc -l` -eq "1"]; then
 	echo 
 else 
 	echo cape-bone-iio > /sys/devices/bone_capemgr.*/slots
 fi
 
+sleep 0.01
 
 #check if the trigger directories/files are set. if not, create them
 if [ -f $Trig1/direction ]; then
 	echo 
 else
 	echo 44 > "/sys/class/gpio/export"
-	echo in > direction
+	echo "in" > $Trig1/direction
 fi
+
+sleep 0.01
 
 if [ -f $Trig2/direction ]; then
     echo
 else
 	echo 26 > "/sys/class/gpio/export"
-	echo in > direction
+	echo "in" > $Trig2/direction
 fi
+
+sleep 0.01
 
 if [ -f $Trig3/direction ]; then
     echo
 else 
 	echo 46 > "/sys/class/gpio/export"
-	echo in > direction
+	echo "in" > $Trig3/direction
 fi
+
+sleep 0.01
 
 if [ -f $Trig4/direction ]; then
     echo
 else
 	echo 65 > "/sys/class/gpio/export"
-	echo in >  direction
+	echo "in" >  $Trig4/direction
 fi
+
+sleep 0.01
 
 if [ -f $fill_relay/direction ]; then
     echo
 else
         echo 68 > "/sys/class/gpio/export"
-	echo out > direction
+	echo "out" > $fill_relay/direction
 fi
+
+sleep 0.01
 
 if [ -f $drain_relay/direction ]; then
     echo
 else
 	echo 67 > "/sys/class/gpio/export"
-	echo out > direction
+	echo "out" > $drain_relay/direction
 fi
 
+sleep 0.01
 
 #Turn both pumps off
 echo "Turning both pumps off..."
@@ -121,7 +133,7 @@ done
 helper_num=`./find_helper`
 echo "Taking data..."
 file_name="attnRun_"`date "+%Y_%m_%d_%H_%M"`".txt"
-. attenuation_measurement 28 $file_name
+. attenuation_measurement $helper_num $file_name
 
 #stop drain pump when trig_4 is deactive
 fourisempty="1"
