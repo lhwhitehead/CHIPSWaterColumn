@@ -9,6 +9,20 @@ Trig3="/sys/class/gpio/gpio46"
 Trig4="/sys/class/gpio/gpio65"
 fill_relay="/sys/class/gpio/gpio68"
 drain_relay="/sys/class/gpio/gpio67"
+power_relay="/sys/class/gpio/gpio49"
+
+#temperature sensor directory
+echo BB-W1:00A0 > /sys/devices/bone_capemgr.9/slots
+
+#set output for power relay for 5V supply line
+if [ -f $power_relay/direction ]; then
+	echo
+else
+	echo 49 > "/sys/class/gpio/export"
+	echo "out" > $power_relay/direction
+fi
+
+sleep 0.01
 
 #set the pins to read voltage
 if [ `grep "cape-bone-iio" /sys/devices/bone_capemgr.*/slots | wc -l` -eq "1" ]; then
@@ -74,6 +88,9 @@ fi
 
 sleep 0.01
 
+echo "Turning on 5V power supply..."
+echo 1 > "$power_relay/value"
+
 #Turn both pumps off
 echo "Turning both pumps off..."
 ./servo $fillpump 0
@@ -112,8 +129,13 @@ echo 0 > "$fill_relay/value"
 
 #wait for 20 min
 #sleep 20m
+echo "Switching off power to triggers..."
+echo 0 > "$power_relay/value"
 echo "Waiting for water to settle..."
-sleep 1
+sleep 20m
+echo "Turning power back on to triggers..."
+echo 1 > "$power_relay/value"
+sleep 1m
 
 #start drain pump
 echo "Starting drain pump..."
@@ -161,6 +183,9 @@ done
 echo "Stopping drain pump..."
 ./servo_angle $drainpump 0
 echo 0 > "$drain_relay/value"
+
+echo "Turning off 5V power supply..."
+echo 0 > "$power_relay/value"
 
 echo "Water attenuation run status: COMPLETE"
 #emergency turn off script
