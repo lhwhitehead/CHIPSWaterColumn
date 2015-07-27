@@ -1,0 +1,76 @@
+#! /bin/bash
+
+#find the photodiode directory with help_num as an input argument
+help_num=$1
+SYSFS_ADC_DIR="/sys/bus/iio/devices/iio:device0/in_voltage0_raw"
+SYSFS_VOL_DIR="/sys/devices/ocp.3/helper."$help_num"/AIN0"
+
+#find and touch the file_name that it will output to it
+file1=$2
+touch $file1
+file2=$3
+touch $file2
+
+#set up averaging variables
+toAverage=25
+average=0
+rms=0
+count=0
+average_vol=0
+rms_vol=0
+count_vol=0
+
+#set trigger level to loop over
+Trigger3="/sys/class/gpio/gpio46"
+trig3=`cat "$Trigger3/value"`
+buf1=2
+buf2=3
+buf3=4
+#always loops while trigger3 is activated
+while (( $trig3 == 1 )); do
+	
+	  #gets the value of trigger3 from the directory
+	  buf1=`cat "$Trigger3/value"`
+	  if [ $buf1 == $buf2 ] && [ $buf2 == $buf3 ]; then
+		trig3=$buf1
+	  else
+		buf3=$buf2
+		buf2=$buf1
+	  fi
+	  total=0
+	  tot_volt=0
+	  #finds the voltage from the photodiode and reads 25 times
+	  for i in {0..24}; do
+	  	  adc=`cat "$SYSFS_ADC_DIR"`
+		  volts[$i]=$adc
+		  total=$(( $total + $adc ))
+		  sleep 0.02
+		  voltage=`cat "$SYSFS_VOL_DIR"`
+		  voltages[$i]=$voltage
+		  tot_volt=$(( $tot_volt + $voltage ))
+		  sleep 0.02
+	  done
+	  
+	  #finds the average from the total voltage read over 25 times
+	  averages=`./divide $total $toAverage`
+	  vol_averages=`./divide $tot_volt $toAverage`
+
+	  #finds the error on the mean for the voltage
+	  rmsSum=0
+	  rmsSumvol=0
+	  k=0
+	  for k in {0..24}; do
+		  foilvar=`./foil ${volts[$k]} $averages`
+		  volfoilvar=`./foil ${voltages[$k]} $vol_averages`
+		  rmsSum=`./add $rmsSum $foilvar`
+		  rmsSumvol=`./add $rmsSumvol $volfoilvar`
+	  done
+	  rms=`./find_error $rmsSum $toAverage`
+	  rms_vol=`./find_error $rmsSumvol $toAverage`
+	  #reads the values out to the file_name
+	  echo `date +%s.%3N`" "${volts[0]}" "${volts[1]}" "${volts[2]}" "${volts[3]}" "${volts[4]}" "${volts[5]}" "${volts[6]}" "${volts[7]}" "${volts[8]}" "${volts[9]}" "${volts[10]}" "${volts[11]}" "${volts[12]}" "${volts[13]}" "${volts[14]}" "${volts[15]}" "${volts[16]}" "${volts[17]}" "${volts[18]}" "${volts[19]}" "${volts[20]}" "${volts[21]}" "${volts[22]}" "${volts[23]}" "${volts[24]}" "$averages" "$rms >> $file1
+	  echo `date +%s.%3N`" "$averages" "$rms
+	  echo `date +%s.%3N`" "${voltages[0]}" "${voltages[1]}" "${voltages[2]}" "${voltages[3]}" "${voltages[4]}" "${voltages[5]}" "${voltages[6]}" "${voltages[7]}" "${voltages[8]}" "${voltages[9]}" "${voltages[10]}" "${voltages[11]}" "${voltages[12]}" "${voltages[13]}" "${voltages[14]}" "${voltages[15]}" "${voltages[16]}" "${voltages[17]}" "${voltages[18]}" "${voltages[19]}" "${voltages[20]}" "${voltages[21]}" "${voltages[22]}" "${voltages[23]}" "${voltages[24]}" "$vol_averages" "$rms_vol >> $file2
+          echo `date +%s.%3N`" "$vol_averages" "$rms_vol
+	  #increments the time count
+done
