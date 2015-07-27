@@ -48,13 +48,14 @@ while (( $trig3 == 1 )); do
 	  rmsSum=0
 	  k=0
 	  for k in {0..24}; do
-		  foilvar=`./foil ${volts[$k]} averages`
+		  foilvar=`./foil ${volts[$k]} $averages`
 		  rmsSum=`./add $rmsSum $foilvar`
 	  done
 	  rms=`./find_error $rmsSum $toAverage`
 	  
+	  #temperature=`./temp_read`	  
 	  #reads the values out to the file_name
-	  echo `date +%s.%3N`" "$averages" "$rms >> $file1
+	  echo `date +%s.%3N`" "$averages" "$rms>> $file1
 	  echo `date +%s.%3N`" "$averages" "$rms
 
 	  #increments the time count
