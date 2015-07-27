@@ -1,3 +1,6 @@
+#This program finds the number in the helper. directory name that is in the path for
+#reading out the voltage file
+
 #! /bin/bash
 
 fileName=`find /sys/devices/ocp.3/ -iname "helper.*"`
