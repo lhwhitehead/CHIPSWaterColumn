@@ -1,0 +1,192 @@
+#! /bin/bash
+
+#set variables
+fillpump="P9_14"
+drainpump="P9_16"
+Trig1="/sys/class/gpio/gpio44"
+Trig2="/sys/class/gpio/gpio26"
+Trig3="/sys/class/gpio/gpio46"
+Trig4="/sys/class/gpio/gpio65"
+fill_relay="/sys/class/gpio/gpio68"
+drain_relay="/sys/class/gpio/gpio67"
+power_relay="/sys/class/gpio/gpio49"
+
+#temperature sensor directory
+echo BB-W1:00A0 > /sys/devices/bone_capemgr.9/slots
+
+#set output for power relay for 5V supply line
+if [ -f $power_relay/direction ]; then
+	echo
+else
+	echo 49 > "/sys/class/gpio/export"
+	echo "out" > $power_relay/direction
+fi
+
+sleep 0.01
+
+#set the pins to read voltage
+if [ `grep "cape-bone-iio" /sys/devices/bone_capemgr.*/slots | wc -l` -eq "1" ]; then
+	echo 
+else 
+	echo cape-bone-iio > /sys/devices/bone_capemgr.*/slots
+fi
+
+sleep 0.01
+
+#check if the trigger directories/files are set. if not, create them
+if [ -f $Trig1/direction ]; then
+	echo 
+else
+	echo 44 > "/sys/class/gpio/export"
+	echo "in" > $Trig1/direction
+fi
+
+sleep 0.01
+
+if [ -f $Trig2/direction ]; then
+    echo
+else
+	echo 26 > "/sys/class/gpio/export"
+	echo "in" > $Trig2/direction
+fi
+
+sleep 0.01
+
+if [ -f $Trig3/direction ]; then
+    echo
+else 
+	echo 46 > "/sys/class/gpio/export"
+	echo "in" > $Trig3/direction
+fi
+
+sleep 0.01
+
+if [ -f $Trig4/direction ]; then
+    echo
+else
+	echo 65 > "/sys/class/gpio/export"
+	echo "in" >  $Trig4/direction
+fi
+
+sleep 0.01
+
+if [ -f $fill_relay/direction ]; then
+    echo
+else
+        echo 68 > "/sys/class/gpio/export"
+	echo "out" > $fill_relay/direction
+fi
+
+sleep 0.01
+
+if [ -f $drain_relay/direction ]; then
+    echo
+else
+	echo 67 > "/sys/class/gpio/export"
+	echo "out" > $drain_relay/direction
+fi
+
+sleep 0.01
+
+echo "Turning on 5V power supply..."
+echo 1 > "$power_relay/value"
+
+#Turn both pumps off
+echo "Turning both pumps off..."
+./servo $fillpump 0
+./servo_angle $drainpump 0
+
+#run trigger check
+echo "Checking triggers..." 
+trigger1=`cat "$Trig1/value"`
+trigger2=`cat "$Trig2/value"`
+trigger3=`cat "$Trig3/value"`
+trigger4=`cat "$Trig4/value"`
+
+#echo out the trigger values
+echo "$trigger1" "$trigger2" "$trigger3" "$trigger4"
+
+#check the level (if trig_1 is active) then fill pump if it is
+echo "Checking trigger level 1..."
+if [ "$trigger1" -eq "0" ]; then
+	echo "Trigger 1 is not active..."
+	echo "Filling water column..."
+	./servo $fillpump 1
+	echo 1 > "$fill_relay/value"
+fi
+
+#turn off fill pump when full
+isfull="0"
+while [ $isfull -eq "0" ]; do
+	isfull=`cat "$Trig1/value"`
+	sleep 0.01
+done
+
+#tube is full so stop the pump
+echo "Stopping fill pump..."
+./servo $fillpump 0
+echo 0 > "$fill_relay/value"
+
+#wait for 20 min
+#sleep 20m
+echo "Switching off power to triggers..."
+echo 0 > "$power_relay/value"
+echo "Waiting for water to settle..."
+#sleep 20m
+echo "Turning power back on to triggers..."
+echo 1 > "$power_relay/value"
+sleep 1m
+
+#start drain pump
+echo "Starting drain pump..."
+./servo_angle $drainpump 1
+echo 1 > "$drain_relay/value"
+
+#run attenuation measurement when trig_2 is deactive
+isempty="1"
+buffer1=2
+buffer2=3
+buffer3=4
+while [ "$isempty" -eq "1" ]; do
+        buffer1=`cat "$Trig2/value"`
+	if [ $buffer1 == $buffer2 ] && [ $buffer2 == $buffer3 ]; then
+		isempty=$buffer1
+	else
+		buffer3=$buffer2
+		buffer2=$buffer1
+	fi
+        sleep 0.01
+done
+
+#take data until trig_3 is deactivated checked by the executable ./att_meas <filename>
+helper_num=`./find_helper`
+echo "Taking data..."
+file_name="attnRun_"`date "+%Y_%m_%d_%H_%M"`".txt"
+file_name_adc="attnRun_"`date "+%Y_%m_%d_%H_%M"`"_adc.txt"
+. attenuation_measurement_adc $helper_num $file_name_adc $file_name
+
+#stop drain pump when trig_4 is deactive
+fourisempty="1"
+buffer1=2
+buffer2=3
+buffer3=4
+while [ "$fourisempty" -eq "1" ]; do
+        buffer1=`cat "$Trig4/value"`
+	if [ $buffer1 == $buffer2 ] && [ $buffer2 == $buffer3 ]; then
+		fourisempty=$buffer1
+	else
+		buffer3=$buffer2
+		buffer2=$buffer1
+	fi
+        sleep 0.01
+done
+
+echo "Stopping drain pump..."
+./servo_angle $drainpump 0
+echo 0 > "$drain_relay/value"
+
+echo "Turning off 5V power supply..."
+echo 0 > "$power_relay/value"
+
+echo "Water attenuation run status: COMPLETE"
+#emergency turn off script
