@@ -1,3 +1,7 @@
+//This program works out how to expand a square of the subtraction of two numbers, taking
+//2 numbers as input arguments
+
+
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
