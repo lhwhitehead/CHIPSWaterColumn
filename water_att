@@ -7,8 +7,8 @@ Trig1="/sys/class/gpio/gpio44"
 Trig2="/sys/class/gpio/gpio26"
 Trig3="/sys/class/gpio/gpio46"
 Trig4="/sys/class/gpio/gpio65"
-fill_relay="/sys/class/gpio/gpio68"
-drain_relay="/sys/class/gpio/gpio67"
+fill_relay="/sys/class/gpio/gpio67"
+drain_relay="/sys/class/gpio/gpio68"
 power_relay="/sys/class/gpio/gpio49"
 
 #temperature sensor directory
@@ -73,7 +73,7 @@ sleep 0.01
 if [ -f $fill_relay/direction ]; then
     echo
 else
-        echo 68 > "/sys/class/gpio/export"
+        echo 67 > "/sys/class/gpio/export"
 	echo "out" > $fill_relay/direction
 fi
 
@@ -82,7 +82,7 @@ sleep 0.01
 if [ -f $drain_relay/direction ]; then
     echo
 else
-	echo 67 > "/sys/class/gpio/export"
+	echo 68 > "/sys/class/gpio/export"
 	echo "out" > $drain_relay/direction
 fi
 
